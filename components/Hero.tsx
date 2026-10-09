@@ -2,10 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Only these count as a user gesture for unmuting; scroll and wheel do not,
+// and unmuting without a gesture makes browsers pause the video.
+const GESTURE_EVENTS = ["pointerdown", "keydown", "touchend"] as const;
+
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [musicOn, setMusicOn] = useState(false);
+  // Set once the visitor uses the music button, so the auto-start never overrides them.
+  const userChoseRef = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -13,21 +18,40 @@ export default function Hero() {
     if (mq.matches && video) {
       video.pause();
     }
-    if (audioRef.current) {
-      audioRef.current.volume = 0.45;
+    if (video) {
+      video.volume = 0.7;
     }
   }, []);
 
+  // Browsers block autoplay with sound, so the music starts on the visitor's
+  // first click, tap or key press anywhere on the page.
+  useEffect(() => {
+    const start = () => {
+      const video = videoRef.current;
+      if (video && !userChoseRef.current) {
+        video.muted = false;
+        video.play().catch(() => {});
+        setMusicOn(true);
+      }
+      GESTURE_EVENTS.forEach((e) => window.removeEventListener(e, start));
+    };
+    GESTURE_EVENTS.forEach((e) => window.addEventListener(e, start, { once: true }));
+    return () => GESTURE_EVENTS.forEach((e) => window.removeEventListener(e, start));
+  }, []);
+
   function toggleMusic() {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const video = videoRef.current;
+    if (!video) return;
+    userChoseRef.current = true;
     if (musicOn) {
-      audio.pause();
+      video.muted = true;
       setMusicOn(false);
     } else {
-      // Browsers require a user gesture for audio-with-sound playback —
-      // this only ever runs from the click handler below, so it's allowed.
-      audio.play().catch(() => {});
+      // The soundtrack lives in the video itself, so it stays in sync.
+      // Browsers only allow unmuting from a user gesture — this only ever
+      // runs from the click handler below, so it's allowed.
+      video.muted = false;
+      video.play().catch(() => {});
       setMusicOn(true);
     }
   }
@@ -47,19 +71,19 @@ export default function Hero() {
         poster="/images/hero-poster.jpg"
         aria-hidden="true"
       >
-        <source src="/video/vesper-hero.mp4" type="video/mp4" />
+        <source src="/video/vesper-hero-720.mp4" type="video/mp4" media="(max-width: 768px)" />
+        <source src="/video/vesper-hero-1080.mp4" type="video/mp4" />
       </video>
 
-      {/* Ambient score for the hero, off by default — browsers require a
-          user gesture before audio can play with sound, and staying silent
-          until asked is the more respectful default anyway. */}
-      <audio ref={audioRef} loop preload="none" aria-hidden="true">
-        <source src="/audio/hero-ambience.mp3" type="audio/mpeg" />
-      </audio>
-
-      {/* Rich espresso gradient overlay for legibility */}
-      <div className="absolute inset-0 bg-gradient-to-t from-near-black via-near-black/45 to-black/35" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+      {/* Shading only where text sits, so the video keeps its own light:
+          a short fade under the nav, a fade into the next section at the
+          bottom, and a left-side wash behind the headline. */}
+      <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-black/45 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-near-black/85 via-transparent via-35% to-transparent" />
+      <div className="absolute inset-0 hidden bg-gradient-to-r from-black/60 via-black/15 via-45% to-transparent md:block" />
+      {/* Phones: text spans the full width of the lower half, so shade that
+          half instead and leave the top of the frame bright. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/40 via-50% to-black/5 md:hidden" />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-24 pt-[calc(var(--nav-h)+2rem)] sm:pb-28 md:px-10 md:pb-32">
         <p className="section-label mb-5 text-gold opacity-0 animate-fade-rise [animation-delay:200ms]">
@@ -106,6 +130,9 @@ export default function Hero() {
       <button
         type="button"
         onClick={toggleMusic}
+        // Keep the button's own press from also triggering the first-gesture handler.
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
         aria-pressed={musicOn}
         aria-label={musicOn ? "Mute background music" : "Play background music"}
         className="group absolute bottom-6 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream/80 opacity-0 animate-fade-in [animation-delay:1400ms] transition-colors duration-500 hover:border-gold hover:text-gold sm:right-10 md:bottom-8"
