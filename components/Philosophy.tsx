@@ -21,7 +21,7 @@ export default function Philosophy() {
       {/* Beans spill down the empty right-hand side as the section rises.
           Kept to the text block so they never run under the gallery below. */}
       <div className="relative">
-        <BeanSpill layout="story" trigger="section" className="inset-x-0 -top-28 bottom-0 md:-top-40" />
+        <BeanSpill layout="story" className="inset-x-0 -top-28 -bottom-14 md:-bottom-20 md:left-auto md:-top-40 md:w-[48%]" />
 
         <div className="relative mx-auto max-w-[1100px] px-6 md:px-10">
           <Reveal as="p" className="section-label text-bronze">

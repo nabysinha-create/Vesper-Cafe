@@ -126,7 +126,8 @@ export default function PhilosophyGallery() {
         });
 
         // Intro: the page dims and the title recedes into the room.
-        tl.to(q("[data-moments-ivory]"), { opacity: 0, duration: 1 }, 0)
+        tl.fromTo(q("[data-moments-room]"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.01 }, 0)
+          .to(q("[data-moments-ivory]"), { opacity: 0, duration: 1 }, 0)
           .fromTo(q("[data-moments-vignette]"), { opacity: 0 }, { opacity: 1, duration: 1 }, 0)
           .to(q("[data-moments-title]"), { z: -500, opacity: 0, duration: 1, ease: "power1.in" }, 0.15)
           .to(q("[data-moments-beans]"), { scale: 0.86, duration: 1, ease: "power1.in" }, 0.15)
@@ -234,19 +235,26 @@ export default function PhilosophyGallery() {
     <div
       ref={stageRef}
       data-moments-stage
-      className="relative mt-16 h-[100svh] min-h-[560px] w-full overflow-hidden md:mt-24"
-      style={{
-        perspective: "1100px",
-        // A warm spotlight in the centre of a dark room.
-        background:
-          "radial-gradient(ellipse 60% 55% at 50% 48%, rgba(196,154,98,0.16), rgba(18,14,11,0) 70%), #120E0B",
-      }}
+      // Ivory at its own edges, so no dark hairline can show where it meets the page.
+      className="relative mt-16 h-[100svh] min-h-[560px] w-full overflow-hidden bg-ivory md:mt-24"
+      style={{ perspective: "1100px" }}
     >
+      {/* The dark room: a warm spotlight in the centre. Hidden until you step
+          inside, so its edge never shows through the ivory as a hairline. */}
+      <div
+        data-moments-room
+        className="invisible absolute -inset-px"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 55% at 50% 48%, rgba(196,154,98,0.16), rgba(18,14,11,0) 70%), #120E0B",
+        }}
+      />
+
       {/* The ivory page, which dims away as you step inside */}
       <div data-moments-ivory className="absolute -inset-px bg-ivory">
         {/* More beans scattered around the title; they sink away with the light */}
         <div data-moments-beans className="absolute inset-0">
-          <BeanSpill layout="table" trigger="[data-moments-stage]" className="inset-0" />
+          <BeanSpill layout="table" className="inset-0" />
         </div>
       </div>
 
