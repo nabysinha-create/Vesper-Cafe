@@ -5,3 +5,9 @@ out
 .env*.local
 .claude
 tsconfig.tsbuildinfo
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
