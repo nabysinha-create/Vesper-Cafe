@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import BeanSpill from "./BeanSpill";
 
 const MOMENTS = [
   {
@@ -128,6 +129,7 @@ export default function PhilosophyGallery() {
         tl.to(q("[data-moments-ivory]"), { opacity: 0, duration: 1 }, 0)
           .fromTo(q("[data-moments-vignette]"), { opacity: 0 }, { opacity: 1, duration: 1 }, 0)
           .to(q("[data-moments-title]"), { z: -500, opacity: 0, duration: 1, ease: "power1.in" }, 0.15)
+          .to(q("[data-moments-beans]"), { scale: 0.86, duration: 1, ease: "power1.in" }, 0.15)
           .fromTo(q("[data-moments-progress]"), { scaleX: 0 }, { scaleX: 1, duration: centre(N - 1) }, 0);
 
         panels.forEach((panel, i) => {
@@ -231,6 +233,7 @@ export default function PhilosophyGallery() {
   return (
     <div
       ref={stageRef}
+      data-moments-stage
       className="relative mt-16 h-[100svh] min-h-[560px] w-full overflow-hidden md:mt-24"
       style={{
         perspective: "1100px",
@@ -240,7 +243,12 @@ export default function PhilosophyGallery() {
       }}
     >
       {/* The ivory page, which dims away as you step inside */}
-      <div data-moments-ivory className="absolute inset-0 bg-ivory" />
+      <div data-moments-ivory className="absolute -inset-px bg-ivory">
+        {/* More beans scattered around the title; they sink away with the light */}
+        <div data-moments-beans className="absolute inset-0">
+          <BeanSpill layout="table" trigger="[data-moments-stage]" className="inset-0" />
+        </div>
+      </div>
 
       <p
         data-moments-title
