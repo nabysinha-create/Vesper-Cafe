@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+﻿import { test, expect, type Page } from "@playwright/test";
 
 // The scroll-driven homepage: Lenis, the pinned hero curtain, the pinned
 // Ritual story, and the reduced-motion fallback.
@@ -84,4 +84,51 @@ test.describe("reduced motion", () => {
     await page.locator("#ritual button", { hasText: "Roast" }).click();
     await expect.poll(() => activeTab(page)).toBe("Roast");
   });
+
+  test("Moments gallery falls back to a plain swipeable row", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("[data-moment]")).toHaveCount(0);
+    await expect(page.locator("#philosophy li")).toHaveCount(10);
+    await expect(page.locator("#philosophy li").first()).toContainText("Heart Latte");
+  });
+});
+
+// Which moment's caption is showing in the 3D gallery.
+const visibleMoment = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-moment-caption]")]
+      .filter((el) => getComputedStyle(el).visibility === "visible" && Number(getComputedStyle(el).opacity) > 0.5)
+      .map((el) => el.querySelector("[data-moment-name]")!.textContent)
+      .join("|"),
+  );
+
+test("Moments gallery plays through in 3D and reverses on the way back", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveClass(/\blenis\b/);
+  await expect(page.locator("[data-moment]")).toHaveCount(10);
+
+  const { top, length } = await page.evaluate(() => {
+    const spacer = document.querySelector("[data-moments-ivory]")!.parentElement!.parentElement!;
+    return { top: spacer.getBoundingClientRect().top + scrollY, length: spacer.offsetHeight - innerHeight };
+  });
+  // Timeline units: moment i is centred at 1.5 + i of a 12.15-unit run.
+  const at = (unit: number) => page.evaluate((y) => scrollTo(0, y), top + (length * unit) / 12.15);
+
+  await at(1.5);
+  await expect.poll(() => visibleMoment(page), { timeout: 5_000 }).toBe("Heart Latte");
+  // Panels really are in 3D space (perspective + transforms on the panels).
+  const transform = await page.locator("[data-moment]").nth(1).evaluate((el) => getComputedStyle(el).transform);
+  expect(transform).toMatch(/^matrix3d/);
+
+  await at(10.5);
+  await expect.poll(() => visibleMoment(page), { timeout: 5_000 }).toBe("Winter Sangria");
+
+  // Scrolling back up rewinds the sequence.
+  await at(3.5);
+  await expect.poll(() => visibleMoment(page), { timeout: 5_000 }).toBe("Spiced Mulled Wine");
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });

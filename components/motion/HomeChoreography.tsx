@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
 
@@ -11,11 +11,11 @@ import { gsap, SplitText, useGSAP } from "@/lib/gsap";
     data-words          paragraph brightens word by word as it is read
     data-clip="up|left|right"   image wipes open; a [data-clip-inner] child settles from 1.25x
     data-clip-delay     seconds to wait before that wipe (for staggered groups)
-    data-parallax="8"   drifts by ±N% of its own height while its parent crosses the screen
+    data-parallax="8"   drifts by Â±N% of its own height while its parent crosses the screen
     data-speed="80"     desktop only: moves N px faster than the page (offset columns)
     data-expand         image grows from an inset frame to full bleed while scrolled
     data-settle         panel scales up into place while scrolled
-    data-rise           fades up once (optional value = delay in seconds)
+    data-rise           fades up; reverses when scrolled back (optional value = delay in seconds)
     data-wordmark       footer wordmark letters rise as the page ends
 
   Everything lives inside a reduced-motion media query, so visitors who ask
@@ -58,7 +58,7 @@ export default function HomeChoreography() {
                 pin: true,
                 pinSpacing: false,
                 scrub: true,
-                refreshPriority: 2,
+                refreshPriority: 3,
               },
             })
             .to("[data-hero-media]", { scale: 1.12, ease: "none" }, 0)
@@ -79,7 +79,7 @@ export default function HomeChoreography() {
                 duration: 1.3,
                 ease: "expo.out",
                 stagger: 0.1,
-                scrollTrigger: { trigger: el, start: "top 86%", once: true },
+                scrollTrigger: { trigger: el, start: "top 86%", toggleActions: "play none none reverse" },
               }),
           });
         });
@@ -110,7 +110,7 @@ export default function HomeChoreography() {
           const delay = Number(el.dataset.clipDelay ?? 0);
           const inner = el.querySelector("[data-clip-inner]");
           const tl = gsap.timeline({
-            scrollTrigger: { trigger: el, start: "top 88%", once: true },
+            scrollTrigger: { trigger: el, start: "top 88%", toggleActions: "play none none reverse" },
           });
           tl.fromTo(
             el,
@@ -190,7 +190,7 @@ export default function HomeChoreography() {
             duration: 1.2,
             ease: "expo.out",
             delay: Number(el.dataset.rise || 0),
-            scrollTrigger: { trigger: el, start: "top 90%", once: true },
+            scrollTrigger: { trigger: el, start: "top 90%", toggleActions: "play none none reverse" },
           });
         });
 

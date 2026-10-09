@@ -44,15 +44,10 @@ export default function Philosophy() {
           are places you settle into — for the first coffee, the last
           conversation, and everything in between.
         </p>
-
-        <Reveal delay={3} className="mt-20 md:mt-24">
-          <p className="section-label text-bronze">Moments Worth Savouring</p>
-        </Reveal>
       </div>
 
+      {/* Carries its own "Moments Worth Savouring" title and spacing */}
       <PhilosophyGallery />
-
-      <div className="h-20 md:h-28" />
     </section>
   );
 }
