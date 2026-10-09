@@ -9,23 +9,31 @@ import DayJourney from "@/components/DayJourney";
 import Visit from "@/components/Visit";
 import SocialStrip from "@/components/SocialStrip";
 import Footer from "@/components/Footer";
+import SmoothScroll from "@/components/SmoothScroll";
+import HomeChoreography from "@/components/motion/HomeChoreography";
 
 export default function Home() {
   return (
-    <>
+    <SmoothScroll>
       <Nav />
       <main className="pb-14 md:pb-0">
         <Hero />
-        <Philosophy />
-        <Signature />
-        <Ritual />
-        <Experience />
-        <Bakery />
-        <DayJourney />
-        <Visit />
-        <SocialStrip />
+        {/* Everything after the hero sits above it, so it can slide over the pinned film. */}
+        <div className="relative z-10">
+          <Philosophy />
+          <Signature />
+          <Ritual />
+          <Experience />
+          <Bakery />
+          <DayJourney />
+          <Visit />
+          <SocialStrip />
+        </div>
       </main>
-      <Footer />
-    </>
+      <div className="relative z-10">
+        <Footer />
+      </div>
+      <HomeChoreography />
+    </SmoothScroll>
   );
 }

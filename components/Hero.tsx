@@ -59,10 +59,12 @@ export default function Hero() {
   return (
     <section
       id="top"
+      data-hero
       className="relative flex h-[100svh] min-h-[560px] w-full items-end overflow-hidden bg-near-black"
     >
       <video
         ref={videoRef}
+        data-hero-media
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
         muted
@@ -84,8 +86,10 @@ export default function Hero() {
       {/* Phones: text spans the full width of the lower half, so shade that
           half instead and leave the top of the frame bright. */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/40 via-50% to-black/5 md:hidden" />
+      {/* Deepens as the next section slides over the film (driven on scroll). */}
+      <div data-hero-dim className="absolute inset-0 bg-near-black opacity-0" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-24 pt-[calc(var(--nav-h)+2rem)] sm:pb-28 md:px-10 md:pb-32">
+      <div data-hero-content className="relative z-10 mx-auto w-full max-w-[1440px] px-6 pb-24 pt-[calc(var(--nav-h)+2rem)] sm:pb-28 md:px-10 md:pb-32">
         <p className="section-label mb-5 text-gold opacity-0 animate-fade-rise [animation-delay:200ms]">
           Café Vesper · Dubai
         </p>

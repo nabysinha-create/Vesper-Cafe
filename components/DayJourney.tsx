@@ -42,39 +42,48 @@ export default function DayJourney() {
         <Reveal as="p" className="section-label text-gold">
           The Day, Unhurried
         </Reveal>
-        <Reveal delay={1}>
-          <h2 className="mt-5 max-w-2xl text-balance font-serif text-[2.5rem] font-medium leading-[1.05] text-ivory sm:text-[3.4rem]">
-            From First Pour to Last Table.
-          </h2>
-        </Reveal>
+        <h2
+          data-split
+          className="mt-5 max-w-2xl text-balance font-serif text-[2.5rem] font-medium leading-[1.05] text-ivory sm:text-[3.4rem]"
+        >
+          From First Pour to Last Table.
+        </h2>
 
         <div className="mt-16 flex flex-col gap-16 md:mt-24 md:gap-24">
           {MOMENTS.map((m, i) => (
-            <Reveal key={m.time}>
+            <div
+              key={m.time}
+              className={`flex flex-col items-center gap-8 md:gap-14 ${
+                i % 2 === 1 ? "md:flex-row-reverse" : "md:flex-row"
+              }`}
+            >
+              {/* Each photo opens toward its caption, so the day reads
+                  as one continuous movement down the page. */}
               <div
-                className={`flex flex-col items-center gap-8 md:gap-14 ${
-                  i % 2 === 1 ? "md:flex-row-reverse" : "md:flex-row"
-                }`}
+                data-clip={i % 2 === 1 ? "right" : "left"}
+                className="relative aspect-[4/3] w-full overflow-hidden bg-walnut md:w-1/2"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden md:w-1/2">
-                  <Image
-                    src={m.img}
-                    alt={m.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover"
-                  />
-                </div>
-                <div className="w-full md:w-1/2">
-                  <span className="section-label text-gold">
-                    {String(i + 1).padStart(2, "0")} — {m.time}
-                  </span>
-                  <p className="mt-4 max-w-sm text-balance font-serif text-2xl font-light italic text-ivory sm:text-3xl">
-                    {m.copy}
-                  </p>
+                <div data-clip-inner className="absolute inset-0">
+                  <div data-parallax="6" className="absolute inset-x-0 -inset-y-[8%]">
+                    <Image
+                      src={m.img}
+                      alt={m.alt}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
                 </div>
               </div>
-            </Reveal>
+              <div data-rise="0.4" className="w-full md:w-1/2">
+                <span className="section-label text-gold">
+                  {String(i + 1).padStart(2, "0")} — {m.time}
+                </span>
+                <p className="mt-4 max-w-sm text-balance font-serif text-2xl font-light italic text-ivory sm:text-3xl">
+                  {m.copy}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </div>

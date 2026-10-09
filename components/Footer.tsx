@@ -58,6 +58,7 @@ export default function Footer() {
 
         <p
           aria-hidden="true"
+          data-wordmark
           className="mt-12 select-none whitespace-nowrap font-serif text-[16vw] font-medium leading-none tracking-tight text-cream/[0.06] sm:text-[9rem] md:text-[11rem]"
         >
           Café Vesper

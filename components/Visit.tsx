@@ -19,16 +19,21 @@ export default function Visit() {
   return (
     <section id="visit" className="bg-espresso py-24 md:py-36">
       <div className="mx-auto max-w-[1200px] px-6 md:px-10">
-        <div className="grid gap-14 rounded-sm border border-gold/15 bg-near-black/40 p-8 sm:p-12 md:grid-cols-2 md:gap-16 md:p-16">
+        {/* The invitation settles into place as it arrives: the journey's last stop. */}
+        <div
+          data-settle
+          className="grid gap-14 rounded-sm border border-gold/15 bg-near-black/40 p-8 sm:p-12 md:grid-cols-2 md:gap-16 md:p-16"
+        >
           <div>
             <Reveal as="p" className="section-label text-gold">
               Visit Café Vesper
             </Reveal>
-            <Reveal delay={1}>
-              <h2 className="mt-5 text-balance font-serif text-[2.4rem] font-medium leading-[1.05] text-ivory sm:text-[3.2rem]">
-                Your Table Is Waiting.
-              </h2>
-            </Reveal>
+            <h2
+              data-split
+              className="mt-5 text-balance font-serif text-[2.4rem] font-medium leading-[1.05] text-ivory sm:text-[3.2rem]"
+            >
+              Your Table Is Waiting.
+            </h2>
             <Reveal delay={2}>
               <p className="mt-6 max-w-sm text-balance font-light text-cream/75 md:text-lg">
                 Come for the coffee. Stay for the room.

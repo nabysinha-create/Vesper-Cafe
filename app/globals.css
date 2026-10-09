@@ -154,4 +154,11 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* SplitText line masks clip at the line box; give descenders (g, p, y)
+     room so they aren't cut off mid-reveal. */
+  .split-line-mask {
+    padding-bottom: 0.16em;
+    margin-bottom: -0.16em;
+  }
 }

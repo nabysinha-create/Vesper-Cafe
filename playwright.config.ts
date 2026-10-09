@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3000;
+// Override with PORT=… to test a server on another port (e.g. this
+// experimental branch running beside the original site on 3000).
+const PORT = Number(process.env.PORT ?? 3000);
 
 export default defineConfig({
   testDir: "./tests/e2e",

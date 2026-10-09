@@ -8,45 +8,63 @@ export default function Bakery() {
         <Reveal as="p" className="section-label text-bronze">
           From the Pastry Case
         </Reveal>
-        <Reveal delay={1}>
-          <h2 className="mt-5 max-w-2xl text-balance font-serif text-[2.5rem] font-medium leading-[1.05] sm:text-[3.4rem]">
-            Something Sweet Is Waiting.
-          </h2>
-        </Reveal>
+        <h2
+          data-split
+          className="mt-5 max-w-2xl text-balance font-serif text-[2.5rem] font-medium leading-[1.05] sm:text-[3.4rem]"
+        >
+          Something Sweet Is Waiting.
+        </h2>
 
+        {/* The three photos wipe open one after another, like a case being unveiled. */}
         <div className="mt-14 grid grid-cols-1 gap-4 md:mt-16 md:grid-cols-12 md:gap-6">
-          <Reveal
-            delay={2}
-            className="relative aspect-[4/5] overflow-hidden md:col-span-7 md:aspect-auto md:row-span-2"
+          <div
+            data-clip="up"
+            className="relative aspect-[4/5] overflow-hidden bg-cream md:col-span-7 md:row-span-2 md:aspect-auto"
           >
-            <Image
-              src="/images/bakery-main.jpg"
-              alt="Placeholder — replace with Café Vesper bakery photography: pastry case display, croissants and cakes, warm light."
-              fill
-              sizes="(max-width: 768px) 100vw, 55vw"
-              className="object-cover"
-            />
-          </Reveal>
+            <div data-clip-inner className="absolute inset-0">
+              <div data-parallax="6" className="absolute inset-x-0 -inset-y-[8%]">
+                <Image
+                  src="/images/bakery-main.jpg"
+                  alt="Placeholder — replace with Café Vesper bakery photography: pastry case display, croissants and cakes, warm light."
+                  fill
+                  sizes="(max-width: 768px) 100vw, 55vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          </div>
 
-          <Reveal delay={2} className="relative aspect-[4/3] overflow-hidden md:col-span-5">
-            <Image
-              src="/images/bakery-2.jpg"
-              alt="Placeholder — replace with Café Vesper bakery photography: cake slice, close-up elegant plating."
-              fill
-              sizes="(max-width: 768px) 100vw, 40vw"
-              className="object-cover"
-            />
-          </Reveal>
+          <div
+            data-clip="right"
+            data-clip-delay="0.25"
+            className="relative aspect-[4/3] overflow-hidden bg-cream md:col-span-5"
+          >
+            <div data-clip-inner className="absolute inset-0">
+              <Image
+                src="/images/bakery-2.jpg"
+                alt="Placeholder — replace with Café Vesper bakery photography: cake slice, close-up elegant plating."
+                fill
+                sizes="(max-width: 768px) 100vw, 40vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
 
-          <Reveal delay={3} className="relative aspect-[4/3] overflow-hidden md:col-span-5">
-            <Image
-              src="/images/bakery-3.jpg"
-              alt="Placeholder — replace with Café Vesper bakery photography: assorted pastries and tarts, editorial styling."
-              fill
-              sizes="(max-width: 768px) 100vw, 40vw"
-              className="object-cover"
-            />
-          </Reveal>
+          <div
+            data-clip="right"
+            data-clip-delay="0.45"
+            className="relative aspect-[4/3] overflow-hidden bg-cream md:col-span-5"
+          >
+            <div data-clip-inner className="absolute inset-0">
+              <Image
+                src="/images/bakery-3.jpg"
+                alt="Placeholder — replace with Café Vesper bakery photography: assorted pastries and tarts, editorial styling."
+                fill
+                sizes="(max-width: 768px) 100vw, 40vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
         </div>
 
         <Reveal delay={2}>
