@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import SoundToggle from "./SoundToggle";
+import { sound, useSoundtrack } from "@/lib/sound";
 
 // Only these count as a user gesture for unmuting; scroll and wheel do not,
 // and unmuting without a gesture makes browsers pause the video.
@@ -8,53 +10,26 @@ const GESTURE_EVENTS = ["pointerdown", "keydown", "touchend"] as const;
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [musicOn, setMusicOn] = useState(false);
-  // Set once the visitor uses the music button, so the auto-start never overrides them.
-  const userChoseRef = useRef(false);
+
+  // The soundtrack lives in the video itself, so it stays in sync. It plays
+  // whenever sound is on and no other film on screen has taken it over.
+  useSoundtrack("hero", videoRef, 0.7);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const video = videoRef.current;
-    if (mq.matches && video) {
-      video.pause();
-    }
-    if (video) {
-      video.volume = 0.7;
-    }
+    if (mq.matches) videoRef.current?.pause();
   }, []);
 
   // Browsers block autoplay with sound, so the music starts on the visitor's
   // first click, tap or key press anywhere on the page.
   useEffect(() => {
     const start = () => {
-      const video = videoRef.current;
-      if (video && !userChoseRef.current) {
-        video.muted = false;
-        video.play().catch(() => {});
-        setMusicOn(true);
-      }
+      sound.autoStart();
       GESTURE_EVENTS.forEach((e) => window.removeEventListener(e, start));
     };
     GESTURE_EVENTS.forEach((e) => window.addEventListener(e, start, { once: true }));
     return () => GESTURE_EVENTS.forEach((e) => window.removeEventListener(e, start));
   }, []);
-
-  function toggleMusic() {
-    const video = videoRef.current;
-    if (!video) return;
-    userChoseRef.current = true;
-    if (musicOn) {
-      video.muted = true;
-      setMusicOn(false);
-    } else {
-      // The soundtrack lives in the video itself, so it stays in sync.
-      // Browsers only allow unmuting from a user gesture — this only ever
-      // runs from the click handler below, so it's allowed.
-      video.muted = false;
-      video.play().catch(() => {});
-      setMusicOn(true);
-    }
-  }
 
   return (
     <section
@@ -131,38 +106,7 @@ export default function Hero() {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={toggleMusic}
-        // Keep the button's own press from also triggering the first-gesture handler.
-        onPointerDown={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        aria-pressed={musicOn}
-        aria-label={musicOn ? "Mute background music" : "Play background music"}
-        className="group absolute bottom-6 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-cream/30 text-cream/80 opacity-0 animate-fade-in [animation-delay:1400ms] transition-colors duration-500 hover:border-gold hover:text-gold sm:right-10 md:bottom-8"
-      >
-        {musicOn ? (
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-            <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor" />
-            <path
-              d="M16.5 8.5a5 5 0 0 1 0 7M19 6a9 9 0 0 1 0 12"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-            <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor" />
-            <path
-              d="M15.5 9.5l5 5m0-5l-5 5"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-          </svg>
-        )}
-      </button>
+      <SoundToggle className="absolute bottom-6 right-6 z-10 opacity-0 animate-fade-in [animation-delay:1400ms] sm:right-10 md:bottom-8" />
 
       <style>{`
         @keyframes scrollline {

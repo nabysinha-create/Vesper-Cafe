@@ -132,3 +132,35 @@ test("Moments gallery plays through in 3D and reverses on the way back", async (
   );
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("café film takes over the music while on screen, then hands it back", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveClass(/\blenis\b/);
+  const hero = page.locator("section#top video");
+  const film = page.locator("#experience video");
+  const muted = (v: typeof hero) => v.evaluate((el: HTMLVideoElement) => el.muted);
+
+  // First click anywhere switches sound on: the hero film is heard.
+  await expect(async () => {
+    await page.mouse.click(10, 300);
+    expect(await muted(hero)).toBe(false);
+  }).toPass({ timeout: 15_000 });
+  expect(await muted(film)).toBe(true);
+
+  // With the café film filling the view, its soundtrack takes over.
+  await film.evaluate((el) => {
+    const r = el.parentElement!.parentElement!.getBoundingClientRect();
+    scrollTo(0, r.top + scrollY - (innerHeight - r.height) / 2);
+  });
+  await expect.poll(() => muted(film), { timeout: 5_000 }).toBe(false);
+  await expect.poll(() => muted(hero), { timeout: 5_000 }).toBe(true);
+  await expect.poll(() => film.evaluate((el: HTMLVideoElement) => !el.paused)).toBe(true);
+
+  // Its sound button is the same page-wide switch.
+  await expect(page.locator("#experience").getByRole("button", { name: "Mute background music" })).toBeVisible();
+
+  // Scroll back to the top: the hero's music returns, the film pauses.
+  await page.evaluate(() => scrollTo(0, 0));
+  await expect.poll(() => muted(hero), { timeout: 5_000 }).toBe(false);
+  await expect.poll(() => film.evaluate((el: HTMLVideoElement) => el.paused), { timeout: 5_000 }).toBe(true);
+});

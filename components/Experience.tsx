@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Reveal from "./Reveal";
+import AmbienceFilm from "./AmbienceFilm";
+import SoundToggle from "./SoundToggle";
 
 export default function Experience() {
   return (
@@ -22,16 +24,12 @@ export default function Experience() {
             className="relative h-[56vh] min-h-[400px] w-full overflow-hidden bg-walnut md:col-span-8 md:h-[80vh]"
           >
             <div data-parallax="7" className="absolute inset-x-0 -inset-y-[10%]">
-              <Image
-                src="/images/experience-bookshop-main.jpg"
-                alt="Café Vesper's bookshop corner: warm timber shelving lined with books, hanging plants, brass pendant lights, and guests reading over coffee."
-                fill
-                sizes="(max-width: 768px) 100vw, 65vw"
-                className="object-cover"
-                loading="eager"
-              />
+              <AmbienceFilm />
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-near-black/70 via-near-black/10 to-transparent" />
+
+            {/* While this film is on screen, its own café soundtrack takes over the music */}
+            <SoundToggle className="absolute right-6 top-6 bg-near-black/30 backdrop-blur-sm sm:right-10 sm:top-10" />
 
             {/* Restrained dark-warm glass panel — the one deliberate use of glass on the page */}
             <div
