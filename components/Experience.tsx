@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Reveal from "./Reveal";
 import AmbienceFilm from "./AmbienceFilm";
 import SoundToggle from "./SoundToggle";
@@ -17,11 +16,12 @@ export default function Experience() {
           A Place Worth Staying In.
         </h2>
 
-        <div className="mt-14 grid grid-cols-1 gap-4 md:mt-16 md:grid-cols-12 md:gap-5">
-          {/* The room opens out from an inset frame as you scroll toward it. */}
+        {/* The café film spans the full width and opens out from an inset
+            frame as you scroll toward it. Desktop shows the whole 16:9 frame. */}
+        <div className="mt-14 md:mt-16">
           <div
             data-expand
-            className="relative h-[56vh] min-h-[400px] w-full overflow-hidden bg-walnut md:col-span-8 md:h-[80vh]"
+            className="relative h-[56vh] min-h-[400px] w-full overflow-hidden bg-walnut md:aspect-video md:h-auto md:max-h-[85vh] md:min-h-0"
           >
             <div data-parallax="7" className="absolute inset-x-0 -inset-y-[10%]">
               <AmbienceFilm />
@@ -41,24 +41,6 @@ export default function Experience() {
                 conversations.
               </p>
             </div>
-          </div>
-
-          <div
-            data-clip="up"
-            data-clip-delay="0.2"
-            className="relative h-[38vh] min-h-[280px] w-full overflow-hidden bg-walnut md:col-span-4 md:h-[80vh]"
-          >
-            <div data-clip-inner className="absolute inset-0">
-              <Image
-                src="/images/experience-cozy-corner.jpg"
-                alt="A quiet reading corner at Café Vesper: linen cushions, a warm throw, string lights, and a latte with a fresh croissant on the table."
-                fill
-                sizes="(max-width: 768px) 100vw, 30vw"
-                className="object-cover"
-                loading="eager"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-near-black/40 via-transparent to-transparent" />
           </div>
         </div>
       </div>
