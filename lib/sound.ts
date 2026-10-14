@@ -77,8 +77,11 @@ export function useSoundtrack(id: string, ref: RefObject<HTMLVideoElement>, volu
       if (audible) {
         video.muted = false;
         if (video.paused) {
-          video.play().catch(() => {
-            // The browser refused playback with sound; keep the picture going.
+          video.play().catch((err: DOMException) => {
+            // Only a refusal to play with sound means mute and carry on. An
+            // interrupted play (e.g. paused as it scrolled off) is harmless,
+            // and re-muting then would leave this film silent.
+            if (err?.name !== "NotAllowedError") return;
             video.muted = true;
             video.play().catch(() => {});
           });

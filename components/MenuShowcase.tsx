@@ -75,34 +75,26 @@ const DISHES: Dish[] = [
 ];
 
 const N = DISHES.length;
-const STRIPS = 6;
-const PARTICLES = 16;
-// Timeline units: dish i is centred at 1 + 1.3i. Each dish builds over the
-// 0.85 before its centre, holds, and has left before the next one lands.
-const STEP = 1.3;
-const centre = (i: number) => 1 + i * STEP;
-const TOTAL = centre(N - 1) + 0.6;
+const PARTICLES = 14;
+const STEP_DEG = 360 / N;
+// Timeline units: a short intro, then dish i is at the front at INTRO + i.
+const INTRO = 0.6;
+const front = (i: number) => INTRO + i;
+const TOTAL = front(N - 1) + 0.5;
 
 const src = (d: Dish) => `/images/menu/${d.slug}.jpg`;
 
-// Dissolves the dish photo's edges, so it has no frame and melts into the room.
-const FEATHER = "radial-gradient(closest-side, #000 55%, rgba(0,0,0,0.55) 78%, transparent 100%)";
-const SLICE_FADE = "linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent)";
-// Fades the full-screen ambience out at the top and bottom of the section.
-const EDGE_FADE = "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)";
-
 /*
-  "Signature Favourites" as a scroll-driven 3D menu. The stage pins and each
-  dish takes its turn: the card rises from depth, the photo builds itself from
-  slices that drop in from above (bottom first, like layers being stacked),
-  crumbs, herbs and spices in the dish's own colours fall around it, and its
-  name and ingredients rise in. Then it tips away as the next dish arrives.
+  "Signature Favourites" as a 3D carousel ring. All seven dishes stand around
+  a circle that spans the screen; the stage pins and scrolling turns the ring,
+  so each dish swings round to the front in turn while the others angle away
+  into depth, dimmed. The dish at the front pops forward, its ingredients
+  shower down around it, and its name and ingredients appear below.
 
   Reduced motion (and before hydration): a plain grid of the dishes.
 */
 export default function MenuShowcase() {
   const [immersive, setImmersive] = useState(false);
-  const [active, setActive] = useState(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<ScrollTrigger | null>(null);
 
@@ -110,20 +102,20 @@ export default function MenuShowcase() {
     setImmersive(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  // Scatter for the falling crumbs: fixed once, so re-renders never move them.
+  // Scatter for the falling ingredients: fixed once, so re-renders never move them.
   const particles = useMemo(
     () =>
       DISHES.map((d) =>
         Array.from({ length: PARTICLES }, (_, k) => ({
-          x: -35 + Math.random() * 170, // % of the dish area width
-          y: 25 + Math.random() * 68, // % of the dish area height
-          size: 4 + Math.random() * 10,
+          x: -25 + Math.random() * 150, // % of card width
+          y: 10 + Math.random() * 95, // % of card height
+          size: 4 + Math.random() * 9,
           color: d.palette[k % d.palette.length],
-          leaf: k % 4 === 1, // some herb-leaf shapes
+          leaf: k % 4 === 1,
           rot: Math.random() * 360,
-          fall: 0.6 + Math.random() * 0.6,
-          delay: Math.random() * 0.35,
-          mobile: k < 9,
+          fall: 0.5 + Math.random() * 0.5,
+          delay: Math.random() * 0.3,
+          mobile: k < 8,
         })),
       ),
     [],
@@ -134,16 +126,45 @@ export default function MenuShowcase() {
       const stage = stageRef.current;
       if (!immersive || !stage) return;
       const q = (sel: string, root: ParentNode = stage) => gsap.utils.toArray<HTMLElement>(root.querySelectorAll(sel));
-      let current = 0;
+      const ring = stage.querySelector<HTMLElement>("[data-ring]")!;
+      const cards = q("[data-card]");
+      const shades = q("[data-card-shade]");
 
       const mm = gsap.matchMedia();
       mm.add({ desktop: "(min-width: 768px)", mobile: "(max-width: 767px)" }, (context) => {
         const desktop = Boolean(context.conditions?.desktop);
-        const SCREENS_PER_DISH = desktop ? 0.75 : 0.6;
+        const SCREENS_PER_DISH = desktop ? 0.6 : 0.5;
         const vh = () => window.innerHeight;
+
+        // Ring radius: wide enough that neighbouring cards sit side by side
+        // with a little air between them.
+        const radius = () => (cards[0].offsetWidth / 2 / Math.tan(Math.PI / N)) * (desktop ? 1.95 : 1.1);
+        // Each card turns to its place round the circle, then steps out to the
+        // rim (rotate first, then push out: the order matters). The ring sits
+        // back by one radius so the front card is at normal size.
+        const place = () => {
+          const r = radius();
+          cards.forEach((card, i) => {
+            card.style.transform = `translate(-50%, -50%) rotateY(${i * STEP_DEG}deg) translateZ(${r}px)`;
+          });
+          gsap.set(ring, { z: -r });
+        };
+        place();
+
+        // Cards turned away from the front are dimmed, so the eye stays on
+        // the dish in front.
+        const dim = () => {
+          const rot = Number(gsap.getProperty(ring, "rotationY"));
+          shades.forEach((shade, i) => {
+            let a = (((i * STEP_DEG + rot) % 360) + 540) % 360 - 180;
+            a = Math.abs(a);
+            shade.style.opacity = String(Math.min(0.78, (a / 90) * 0.78));
+          });
+        };
 
         const tl = gsap.timeline({
           defaults: { ease: "none" },
+          onUpdate: dim,
           scrollTrigger: {
             trigger: stage,
             start: "top top",
@@ -152,91 +173,50 @@ export default function MenuShowcase() {
             scrub: true,
             refreshPriority: 2,
             invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              // A dish becomes "current" the moment it starts to arrive, so the
-              // index and the picture always agree.
-              const t = self.progress * TOTAL;
-              const next = Math.max(0, Math.min(N - 1, Math.floor((t - 1 + 0.85) / STEP)));
-              if (next !== current) {
-                current = next;
-                setActive(next);
-              }
-            },
+            onRefresh: place,
           },
         });
         triggerRef.current = tl.scrollTrigger ?? null;
 
-        tl.fromTo(q("[data-menu-progress]"), { scaleX: 1 / N }, { scaleX: 1, duration: centre(N - 1) - 1 }, 1);
+        // Intro: the ring rises out of the dark and swings into place.
+        tl.fromTo(ring, { autoAlpha: 0, y: () => vh() * 0.12, rotationY: 40 }, { autoAlpha: 1, y: 0, rotationY: 0, duration: INTRO, ease: "power2.out" }, 0)
+          // Then scrolling turns the ring, one dish at a time.
+          .to(ring, { rotationY: -(N - 1) * STEP_DEG, duration: N - 1, ease: "none" }, INTRO)
+          .fromTo(q("[data-menu-progress]"), { scaleX: 1 / N }, { scaleX: 1, duration: N - 1 }, INTRO);
 
-        q("[data-dish]").forEach((dish, i) => {
-          const c = centre(i);
-          const side = i % 2 === 0 ? 1 : -1;
-          const strips = q("[data-strip]", dish).reverse(); // bottom slice lands first
-          const parts = q("[data-particle]", dish);
+        cards.forEach((card, i) => {
+          const c = front(i);
+          const pop = card.querySelector("[data-card-pop]")!;
+          const parts = q("[data-particle]", card);
           const caption = q("[data-dish-caption]")[i];
-          const ambient = q("[data-dish-ambient]")[i];
-          gsap.set(dish, { xPercent: -50, yPercent: -50, zIndex: i + 1 });
 
-          // The whole screen takes on this dish's colour and light.
-          tl.fromTo(ambient, { autoAlpha: 0, scale: 1.25 }, { autoAlpha: 1, scale: 1.1, duration: 0.6, ease: "power1.out" }, c - 0.9);
-
-          // The dish floats forward out of the depth of the room and squares up.
-          tl.fromTo(
-            dish,
-            { z: -700, y: () => vh() * 0.08, rotateX: 12, rotateY: 14 * side, scale: 0.9, autoAlpha: 0 },
-            { z: 0, y: 0, rotateX: 0, rotateY: 0, scale: 1, autoAlpha: 1, duration: 0.6, ease: "power2.out" },
-            c - 1,
-          );
-
-          // The dish builds itself: each slice drops in from above, with a
-          // little tumble, and the layers stack from the plate upwards.
-          strips.forEach((s, j) => {
-            const tilt = (j % 2 ? -1 : 1) * (4 + ((j * 37) % 7));
-            tl.fromTo(
-              s,
-              { y: () => -(vh() * 0.85 + j * 30), x: tilt * 4, rotation: tilt, autoAlpha: 0 },
-              { y: 0, x: 0, rotation: 0, autoAlpha: 1, duration: 0.38, ease: "power3.in" },
-              c - 0.85 + j * 0.06,
-            );
-          });
-          // Once every layer has landed, a seamless photo settles over the slices.
-          tl.fromTo(q("[data-dish-base]", dish), { opacity: 0 }, { opacity: 1, duration: 0.06 }, c - 0.15);
-
-          // Crumbs, herbs and spices shower down around it, then clear.
+          // At the front, the dish lifts towards you and its ingredients shower down.
+          tl.fromTo(pop, { z: 0, scale: 1 }, { z: desktop ? 110 : 60, scale: 1.04, duration: 0.3, ease: "power2.out" }, c - 0.32)
+            .to(pop, { z: 0, scale: 1, duration: 0.3, ease: "power2.in" }, c + 0.32);
           parts.forEach((p) => {
             const data = particles[i][Number(p.dataset.particle)];
             tl.fromTo(
               p,
-              { y: () => -vh() * data.fall, rotation: data.rot - 240, autoAlpha: 0 },
-              { y: 0, rotation: data.rot, autoAlpha: 1, duration: 0.5, ease: "power2.in" },
-              c - 0.9 + data.delay,
+              { y: () => -vh() * data.fall, rotation: data.rot - 220, autoAlpha: 0 },
+              { y: 0, rotation: data.rot, autoAlpha: 1, duration: 0.42, ease: "power2.in" },
+              c - 0.45 + data.delay,
             );
           });
-          tl.to(parts, { autoAlpha: 0, duration: 0.2 }, c + 0.3);
+          tl.to(parts, { autoAlpha: 0, duration: 0.18 }, c + 0.3);
 
           // Its name rises out of a mask; the ingredients follow one by one.
-          tl.fromTo(caption, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.12 }, c - 0.32)
-            .fromTo(q("[data-dish-name]", caption), { yPercent: 110 }, { yPercent: 0, duration: 0.3, ease: "power2.out" }, c - 0.32)
+          tl.fromTo(caption, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.1 }, c - 0.3)
+            .fromTo(q("[data-dish-name]", caption), { yPercent: 110 }, { yPercent: 0, duration: 0.25, ease: "power2.out" }, c - 0.3)
             .fromTo(
               q("[data-ingredient]", caption),
-              { y: 14, autoAlpha: 0 },
-              { y: 0, autoAlpha: 1, duration: 0.18, stagger: 0.04, ease: "power2.out" },
-              c - 0.3,
+              { y: 12, autoAlpha: 0 },
+              { y: 0, autoAlpha: 1, duration: 0.15, stagger: 0.03, ease: "power2.out" },
+              c - 0.22,
             );
-
-          if (i < N - 1) {
-            // Then it drifts back into the dark as the next dish comes up,
-            // and its light fades from the room.
-            tl.to(
-              dish,
-              { z: -520, y: () => -vh() * 0.08, rotateX: -12, autoAlpha: 0, duration: 0.45, ease: "power2.in" },
-              c + 0.45,
-            )
-              .to(ambient, { autoAlpha: 0, duration: 0.5 }, c + 0.5)
-              .to(caption, { autoAlpha: 0, y: -20, duration: 0.25 }, c + 0.4);
-          }
+          if (i < N - 1) tl.to(caption, { autoAlpha: 0, y: -16, duration: 0.18 }, c + 0.32);
         });
         tl.to({}, { duration: 0.01 }, TOTAL - 0.01);
+        dim();
       });
 
       // This pin adds scroll length above every later section; re-measure.
@@ -252,7 +232,7 @@ export default function MenuShowcase() {
   function goTo(i: number) {
     const st = triggerRef.current;
     if (!st) return;
-    scrollToY(st.start + (st.end - st.start) * (centre(i) / TOTAL));
+    scrollToY(st.start + (st.end - st.start) * (front(i) / TOTAL));
   }
 
   if (!immersive) {
@@ -275,102 +255,87 @@ export default function MenuShowcase() {
   return (
     <div
       ref={stageRef}
-      className="relative mt-14 h-[100svh] min-h-[560px] w-full overflow-hidden md:mt-20"
+      className="relative mt-14 h-[100svh] min-h-[600px] w-full overflow-hidden md:mt-20"
       style={{
-        perspective: "1300px",
+        perspective: "1700px",
+        perspectiveOrigin: "50% 40%",
         background:
-          "radial-gradient(ellipse 55% 50% at 50% 52%, rgba(196,154,98,0.18), rgba(29,20,15,0) 70%), #1D140F",
+          "radial-gradient(ellipse 60% 45% at 50% 42%, rgba(196,154,98,0.2), rgba(29,20,15,0) 72%), #1D140F",
       }}
     >
-      {/* Full-screen ambience: a softened version of the dish in view fills
-          the whole screen, so the room takes on its colour and light. Its top
-          and bottom fade into the page, so the section has no hard edges. */}
-      <div className="absolute inset-0" style={{ WebkitMaskImage: EDGE_FADE, maskImage: EDGE_FADE }}>
-        {DISHES.map((d) => (
+      {/* Soft fade at the top and bottom, so the room melts into the page */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-espresso to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-40 bg-gradient-to-t from-espresso via-espresso/70 to-transparent" />
+
+      {/* The ring: every dish stands around it, facing outwards */}
+      <div
+        data-ring
+        className="invisible absolute left-1/2 top-[38%] h-0 w-0 md:top-[44%]"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {DISHES.map((d, i) => (
           <div
             key={d.slug}
-            data-dish-ambient
-            className="invisible absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: `url(/images/menu/ambient/${d.slug}.jpg)`,
-              filter: "blur(28px) brightness(0.5) saturate(1.15)",
+            data-card
+            role="button"
+            tabIndex={0}
+            aria-label={`Show ${d.name}`}
+            onClick={() => goTo(i)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                goTo(i);
+              }
             }}
-          />
+            className="absolute left-0 top-0 aspect-[2/3] w-[46vw] md:w-[min(25vw,390px,38vh)] cursor-pointer"
+            style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+          >
+            <div data-card-pop className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
+              <div
+                className="absolute inset-0 overflow-hidden shadow-[0_40px_80px_-30px_rgba(0,0,0,0.85)] [backface-visibility:hidden]"
+                // A faint reflection on the floor beneath each dish.
+                style={{ WebkitBoxReflect: "below 10px linear-gradient(transparent 80%, rgba(0,0,0,0.24))" } as React.CSSProperties}
+              >
+                <Image src={src(d)} alt={d.alt} fill sizes="(max-width: 768px) 46vw, 20vw" className="object-cover" />
+                {/* Dims the dish as it turns away from the front */}
+                <div data-card-shade className="absolute inset-0 bg-near-black" style={{ opacity: 0.78 }} />
+              </div>
+              {particles[i].map((p, k) => (
+                <span
+                  key={k}
+                  data-particle={k}
+                  aria-hidden="true"
+                  className={`invisible absolute ${p.mobile ? "" : "hidden md:block"}`}
+                  style={{
+                    left: `${p.x}%`,
+                    top: `${p.y}%`,
+                    width: p.size * (p.leaf ? 1.6 : 1),
+                    height: p.size,
+                    background: p.color,
+                    borderRadius: p.leaf ? "0 100% 0 100%" : "40%",
+                    boxShadow: "inset -1px -1px 2px rgba(0,0,0,0.35)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
-      {/* Shade where the dish details sit, so the text stays readable */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/30 via-45% to-transparent md:bg-gradient-to-r md:from-espresso/85 md:via-espresso/25 md:via-40%" />
 
-      {DISHES.map((d, i) => (
-        <div
-          key={d.slug}
-          data-dish
-          className="invisible absolute left-1/2 top-[40%] aspect-[2/3] h-[64svh] md:left-[55%] md:top-1/2 md:h-[100svh]"
-        >
-          {/* The dish itself, its edges feathered away into the ambience */}
-          <div className="absolute inset-0" style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}>
-            {Array.from({ length: STRIPS }, (_, k) => (
-              <div
-                key={k}
-                data-strip
-                className="absolute inset-x-0"
-                style={{
-                  top: `${(k * 100) / STRIPS}%`,
-                  height: `${100 / STRIPS}%`,
-                  backgroundImage: `url(${src(d)})`,
-                  backgroundSize: `100% ${STRIPS * 100}%`,
-                  backgroundPosition: `0 ${(k / (STRIPS - 1)) * 100}%`,
-                  // Soft top and bottom edges, so the layers blend as they settle.
-                  WebkitMaskImage: SLICE_FADE,
-                  maskImage: SLICE_FADE,
-                }}
-              />
-            ))}
-            {/* Same file as the slices (one download), so it is already there
-                the moment the last slice lands. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              data-dish-base
-              src={src(d)}
-              alt={d.alt}
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover opacity-0"
-            />
-          </div>
-          {particles[i].map((p, k) => (
-            <span
-              key={k}
-              data-particle={k}
-              aria-hidden="true"
-              className={`invisible absolute ${p.mobile ? "" : "hidden md:block"}`}
-              style={{
-                left: `${p.x}%`,
-                top: `${p.y}%`,
-                width: p.size * (p.leaf ? 1.6 : 1),
-                height: p.size,
-                background: p.color,
-                borderRadius: p.leaf ? "0 100% 0 100%" : "40%",
-                boxShadow: "inset -1px -1px 2px rgba(0,0,0,0.35)",
-              }}
-            />
-          ))}
-        </div>
-      ))}
-
-      {/* The dish in view: name, a line about it, and what goes into it */}
-      <div className="pointer-events-none absolute inset-x-6 bottom-20 z-20 h-36 md:inset-x-auto md:bottom-auto md:left-10 md:top-1/2 md:h-56 md:w-[25vw] md:-translate-y-1/2">
+      {/* The dish at the front: name, a line about it, and what goes into it */}
+      <div className="pointer-events-none absolute inset-x-6 bottom-[4.5rem] z-20 h-32 text-center md:bottom-14 md:h-36">
         {DISHES.map((d, i) => (
-          <div key={d.slug} data-dish-caption className="invisible absolute inset-x-0 bottom-0 md:bottom-auto md:top-0">
+          <div key={d.slug} data-dish-caption className="invisible absolute inset-x-0 bottom-0 flex flex-col items-center">
             <span className="section-label text-gold">{String(i + 1).padStart(2, "0")}</span>
             <p className="mt-2 overflow-hidden pb-1">
-              <span data-dish-name className="block font-serif text-[2rem] italic leading-[1.1] text-ivory md:text-[3rem]">
+              <span data-dish-name className="block font-serif text-[1.9rem] italic leading-[1.1] text-ivory md:text-[2.8rem]">
                 {d.name}
               </span>
             </p>
-            <p className="mt-2 max-w-[28ch] text-sm font-light text-cream/75 md:text-base">{d.note}</p>
-            <ul className="mt-3 flex max-w-[30ch] flex-wrap gap-x-3 gap-y-1">
+            <p className="mt-1 text-sm font-light text-cream/75 md:text-base">{d.note}</p>
+            <ul className="mt-2 flex max-w-xl flex-wrap justify-center gap-x-3 gap-y-1">
               {d.ingredients.map((ing) => (
-                <li key={ing} data-ingredient className="text-[0.7rem] uppercase tracking-[0.16em] text-gold/85">
+                <li key={ing} data-ingredient className="text-[0.68rem] uppercase tracking-[0.16em] text-gold/85">
                   {ing}
                 </li>
               ))}
@@ -379,27 +344,7 @@ export default function MenuShowcase() {
         ))}
       </div>
 
-      {/* Menu index: where you are, and a way to jump to any dish */}
-      <nav aria-label="Signature dishes" className="absolute right-10 top-1/2 z-20 hidden -translate-y-1/2 md:block">
-        <ol className="space-y-3 text-right">
-          {DISHES.map((d, i) => (
-            <li key={d.slug}>
-              <button
-                type="button"
-                onClick={() => goTo(i)}
-                aria-current={i === active}
-                className={`section-label transition-colors duration-500 ${
-                  i === active ? "text-gold" : "text-cream/40 hover:text-cream/75"
-                }`}
-              >
-                {d.name}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
-
-      <div className="absolute inset-x-6 top-[calc(var(--nav-h)+1rem)] z-20 h-px bg-cream/15 md:inset-x-10 md:bottom-10 md:top-auto">
+      <div className="absolute inset-x-6 top-[calc(var(--nav-h)+1rem)] z-20 h-px bg-cream/15 md:inset-x-10">
         <div data-menu-progress className="h-px origin-left scale-x-0 bg-gold" />
       </div>
     </div>

@@ -148,11 +148,15 @@ test("café film takes over the music while on screen, then hands it back", asyn
   expect(await muted(film)).toBe(true);
 
   // With the café film filling the view, its soundtrack takes over.
-  await film.evaluate((el) => {
-    const r = el.parentElement!.parentElement!.getBoundingClientRect();
-    scrollTo(0, r.top + scrollY - (innerHeight - r.height) / 2);
-  });
-  await expect.poll(() => muted(film), { timeout: 5_000 }).toBe(false);
+  // Re-aim each try: pinned sections above can still shift while images load.
+  await expect(async () => {
+    await film.evaluate((el) => {
+      const r = el.parentElement!.parentElement!.getBoundingClientRect();
+      scrollTo(0, r.top + scrollY - (innerHeight - r.height) / 2);
+    });
+    await page.waitForTimeout(400);
+    expect(await muted(film)).toBe(false);
+  }).toPass({ timeout: 10_000 });
   await expect.poll(() => muted(hero), { timeout: 5_000 }).toBe(true);
   await expect.poll(() => film.evaluate((el: HTMLVideoElement) => !el.paused)).toBe(true);
 
@@ -174,17 +178,17 @@ const visibleDish = (page: Page) =>
       .join("|"),
   );
 
-test("3D menu builds each dish in turn and reverses on the way back", async ({ page }) => {
+test("3D menu ring turns each dish to the front and reverses on the way back", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("html")).toHaveClass(/\blenis\b/);
-  await expect(page.locator("[data-dish]")).toHaveCount(7);
+  await expect(page.locator("[data-card]")).toHaveCount(7);
 
   const { top, length } = await page.evaluate(() => {
-    const spacer = document.querySelector("[data-dish]")!.parentElement!.parentElement!;
+    const spacer = document.querySelector("[data-ring]")!.parentElement!.parentElement!;
     return { top: spacer.getBoundingClientRect().top + scrollY, length: spacer.offsetHeight - innerHeight };
   });
-  // Timeline units: dish i is centred at 1 + 1.3i of a 9.4-unit run.
-  const at = (i: number) => page.evaluate((y) => scrollTo(0, y), top + (length * (1 + 1.3 * i)) / 9.4);
+  // Timeline units: dish i is at the front at 0.6 + i of a 7.1-unit run.
+  const at = (i: number) => page.evaluate((y) => scrollTo(0, y), top + (length * (0.6 + i)) / 7.1);
 
   await at(0);
   await expect.poll(() => visibleDish(page), { timeout: 5_000 }).toBe("Falafel Wrap");
@@ -198,7 +202,7 @@ test.describe("reduced motion menu", () => {
   test.use({ reducedMotion: "reduce" });
   test("shows the dishes as a plain grid", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("[data-dish]")).toHaveCount(0);
+    await expect(page.locator("[data-card]")).toHaveCount(0);
     await expect(page.locator("#signature li")).toHaveCount(7);
   });
 });
