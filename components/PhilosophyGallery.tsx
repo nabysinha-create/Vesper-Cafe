@@ -120,7 +120,7 @@ export default function PhilosophyGallery() {
             end: () => `+=${window.innerHeight * (N * SCREENS_PER_MOMENT + 1.4)}`,
             pin: true,
             scrub: true,
-            refreshPriority: 2,
+            refreshPriority: 3,
             invalidateOnRefresh: true,
           },
         });

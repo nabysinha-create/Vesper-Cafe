@@ -164,3 +164,41 @@ test("café film takes over the music while on screen, then hands it back", asyn
   await expect.poll(() => muted(hero), { timeout: 5_000 }).toBe(false);
   await expect.poll(() => film.evaluate((el: HTMLVideoElement) => el.paused), { timeout: 5_000 }).toBe(true);
 });
+
+// Which dish's caption is showing in the 3D menu.
+const visibleDish = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-dish-caption]")]
+      .filter((el) => getComputedStyle(el).visibility === "visible" && Number(getComputedStyle(el).opacity) > 0.5)
+      .map((el) => el.querySelector("[data-dish-name]")!.textContent)
+      .join("|"),
+  );
+
+test("3D menu builds each dish in turn and reverses on the way back", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveClass(/\blenis\b/);
+  await expect(page.locator("[data-dish]")).toHaveCount(7);
+
+  const { top, length } = await page.evaluate(() => {
+    const spacer = document.querySelector("[data-dish]")!.parentElement!.parentElement!;
+    return { top: spacer.getBoundingClientRect().top + scrollY, length: spacer.offsetHeight - innerHeight };
+  });
+  // Timeline units: dish i is centred at 1 + 1.3i of a 9.4-unit run.
+  const at = (i: number) => page.evaluate((y) => scrollTo(0, y), top + (length * (1 + 1.3 * i)) / 9.4);
+
+  await at(0);
+  await expect.poll(() => visibleDish(page), { timeout: 5_000 }).toBe("Falafel Wrap");
+  await at(6);
+  await expect.poll(() => visibleDish(page), { timeout: 5_000 }).toBe("Jalapeño Cheese Rolls");
+  await at(2);
+  await expect.poll(() => visibleDish(page), { timeout: 5_000 }).toBe("Pesto Fusilli");
+});
+
+test.describe("reduced motion menu", () => {
+  test.use({ reducedMotion: "reduce" });
+  test("shows the dishes as a plain grid", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("[data-dish]")).toHaveCount(0);
+    await expect(page.locator("#signature li")).toHaveCount(7);
+  });
+});

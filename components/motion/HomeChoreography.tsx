@@ -58,7 +58,7 @@ export default function HomeChoreography() {
                 pin: true,
                 pinSpacing: false,
                 scrub: true,
-                refreshPriority: 3,
+                refreshPriority: 4,
               },
             })
             .to("[data-hero-media]", { scale: 1.12, ease: "none" }, 0)
