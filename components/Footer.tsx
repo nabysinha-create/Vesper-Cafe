@@ -99,7 +99,7 @@ function FooterLink({
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="underline-draw block w-fit"
+      className="underline-draw block w-fit py-2 md:py-0"
     >
       {children}
     </a>

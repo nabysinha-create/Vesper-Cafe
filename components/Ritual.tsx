@@ -246,7 +246,7 @@ export default function Ritual() {
                 type="button"
                 onClick={() => goTo(i)}
                 aria-current={i === index}
-                className={`section-label text-left transition-colors duration-500 ${
+                className={`section-label py-3 text-left transition-colors duration-500 md:py-1 ${
                   i === index ? "text-gold" : "text-cream/50 hover:text-cream/80"
                 }`}
               >

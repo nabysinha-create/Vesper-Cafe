@@ -125,6 +125,8 @@ export default function HomeChoreography() {
 
         // Parallax drift inside a clipped frame (the wrapper is oversized in CSS).
         all("[data-parallax]").forEach((el) => {
+          // Some frames must stay exact on phones (e.g. a film shown at its true shape).
+          if (!desktop && el.hasAttribute("data-parallax-desktop")) return;
           const amount = Number(el.dataset.parallax || 8);
           gsap.fromTo(
             el,

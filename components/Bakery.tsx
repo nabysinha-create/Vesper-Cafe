@@ -86,7 +86,7 @@ export default function Bakery() {
             </div>
             <a
               href="#signature"
-              className="underline-draw section-label shrink-0 text-bronze"
+              className="underline-draw section-label shrink-0 py-3 text-bronze"
             >
               View Today&rsquo;s Selection
             </a>

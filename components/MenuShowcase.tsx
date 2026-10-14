@@ -138,7 +138,7 @@ export default function MenuShowcase() {
 
         // Ring radius: wide enough that neighbouring cards sit side by side
         // with a little air between them.
-        const radius = () => (cards[0].offsetWidth / 2 / Math.tan(Math.PI / N)) * (desktop ? 1.95 : 1.1);
+        const radius = () => (cards[0].offsetWidth / 2 / Math.tan(Math.PI / N)) * (desktop ? 1.95 : 1.5);
         // Each card turns to its place round the circle, then steps out to the
         // rim (rotate first, then push out: the order matters). The ring sits
         // back by one radius so the front card is at normal size.
@@ -270,7 +270,7 @@ export default function MenuShowcase() {
       {/* The ring: every dish stands around it, facing outwards */}
       <div
         data-ring
-        className="invisible absolute left-1/2 top-[38%] h-0 w-0 md:top-[44%]"
+        className="invisible absolute left-1/2 top-[40%] h-0 w-0 md:top-[44%]"
         style={{ transformStyle: "preserve-3d" }}
       >
         {DISHES.map((d, i) => (
@@ -287,7 +287,7 @@ export default function MenuShowcase() {
                 goTo(i);
               }
             }}
-            className="absolute left-0 top-0 aspect-[2/3] w-[46vw] md:w-[min(25vw,390px,38vh)] cursor-pointer"
+            className="absolute left-0 top-0 aspect-[2/3] w-[52vw] md:w-[min(25vw,390px,38vh)] cursor-pointer"
             style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
           >
             <div data-card-pop className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
@@ -296,7 +296,7 @@ export default function MenuShowcase() {
                 // A faint reflection on the floor beneath each dish.
                 style={{ WebkitBoxReflect: "below 10px linear-gradient(transparent 80%, rgba(0,0,0,0.24))" } as React.CSSProperties}
               >
-                <Image src={src(d)} alt={d.alt} fill sizes="(max-width: 768px) 46vw, 20vw" className="object-cover" />
+                <Image src={src(d)} alt={d.alt} fill sizes="(max-width: 768px) 58vw, 25vw" className="object-cover" />
                 {/* Dims the dish as it turns away from the front */}
                 <div data-card-shade className="absolute inset-0 bg-near-black" style={{ opacity: 0.78 }} />
               </div>
