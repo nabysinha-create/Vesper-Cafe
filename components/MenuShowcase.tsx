@@ -85,6 +85,12 @@ const TOTAL = centre(N - 1) + 0.6;
 
 const src = (d: Dish) => `/images/menu/${d.slug}.jpg`;
 
+// Dissolves the dish photo's edges, so it has no frame and melts into the room.
+const FEATHER = "radial-gradient(closest-side, #000 55%, rgba(0,0,0,0.55) 78%, transparent 100%)";
+const SLICE_FADE = "linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent)";
+// Fades the full-screen ambience out at the top and bottom of the section.
+const EDGE_FADE = "linear-gradient(to bottom, transparent, #000 14%, #000 86%, transparent)";
+
 /*
   "Signature Favourites" as a scroll-driven 3D menu. The stage pins and each
   dish takes its turn: the card rises from depth, the photo builds itself from
@@ -109,8 +115,8 @@ export default function MenuShowcase() {
     () =>
       DISHES.map((d) =>
         Array.from({ length: PARTICLES }, (_, k) => ({
-          x: -18 + Math.random() * 136, // % of card width
-          y: 62 + Math.random() * 52, // % of card height (around the bottom and the table)
+          x: -35 + Math.random() * 170, // % of the dish area width
+          y: 25 + Math.random() * 68, // % of the dish area height
           size: 4 + Math.random() * 10,
           color: d.palette[k % d.palette.length],
           leaf: k % 4 === 1, // some herb-leaf shapes
@@ -147,8 +153,10 @@ export default function MenuShowcase() {
             refreshPriority: 2,
             invalidateOnRefresh: true,
             onUpdate: (self) => {
+              // A dish becomes "current" the moment it starts to arrive, so the
+              // index and the picture always agree.
               const t = self.progress * TOTAL;
-              const next = Math.max(0, Math.min(N - 1, Math.round((t - 1) / STEP)));
+              const next = Math.max(0, Math.min(N - 1, Math.floor((t - 1 + 0.85) / STEP)));
               if (next !== current) {
                 current = next;
                 setActive(next);
@@ -166,13 +174,17 @@ export default function MenuShowcase() {
           const strips = q("[data-strip]", dish).reverse(); // bottom slice lands first
           const parts = q("[data-particle]", dish);
           const caption = q("[data-dish-caption]")[i];
+          const ambient = q("[data-dish-ambient]")[i];
           gsap.set(dish, { xPercent: -50, yPercent: -50, zIndex: i + 1 });
 
-          // The card rises out of the dark, angled, and squares up to face you.
+          // The whole screen takes on this dish's colour and light.
+          tl.fromTo(ambient, { autoAlpha: 0, scale: 1.25 }, { autoAlpha: 1, scale: 1.1, duration: 0.6, ease: "power1.out" }, c - 0.9);
+
+          // The dish floats forward out of the depth of the room and squares up.
           tl.fromTo(
             dish,
-            { z: -520, y: () => vh() * 0.16, rotateX: 24, rotateY: 16 * side, autoAlpha: 0 },
-            { z: 0, y: 0, rotateX: 0, rotateY: 0, autoAlpha: 1, duration: 0.6, ease: "power2.out" },
+            { z: -700, y: () => vh() * 0.08, rotateX: 12, rotateY: 14 * side, scale: 0.9, autoAlpha: 0 },
+            { z: 0, y: 0, rotateX: 0, rotateY: 0, scale: 1, autoAlpha: 1, duration: 0.6, ease: "power2.out" },
             c - 1,
           );
 
@@ -189,8 +201,6 @@ export default function MenuShowcase() {
           });
           // Once every layer has landed, a seamless photo settles over the slices.
           tl.fromTo(q("[data-dish-base]", dish), { opacity: 0 }, { opacity: 1, duration: 0.06 }, c - 0.15);
-          tl.fromTo(q("[data-dish-shadow]", dish), { opacity: 0, scaleX: 0.5 }, { opacity: 1, scaleX: 1, duration: 0.3 }, c - 0.3)
-            .fromTo(q("[data-dish-depth]", dish), { opacity: 0 }, { opacity: 1, duration: 0.3 }, c - 0.3);
 
           // Crumbs, herbs and spices shower down around it, then clear.
           parts.forEach((p) => {
@@ -215,12 +225,15 @@ export default function MenuShowcase() {
             );
 
           if (i < N - 1) {
-            // Then it tips back and away as the next dish comes up.
+            // Then it drifts back into the dark as the next dish comes up,
+            // and its light fades from the room.
             tl.to(
               dish,
-              { z: -620, y: () => -vh() * 0.2, rotateX: -22, autoAlpha: 0, duration: 0.5, ease: "power2.in" },
-              c + 0.4,
-            ).to(caption, { autoAlpha: 0, y: -20, duration: 0.25 }, c + 0.4);
+              { z: -520, y: () => -vh() * 0.08, rotateX: -12, autoAlpha: 0, duration: 0.45, ease: "power2.in" },
+              c + 0.45,
+            )
+              .to(ambient, { autoAlpha: 0, duration: 0.5 }, c + 0.5)
+              .to(caption, { autoAlpha: 0, y: -20, duration: 0.25 }, c + 0.4);
           }
         });
         tl.to({}, { duration: 0.01 }, TOTAL - 0.01);
@@ -269,41 +282,59 @@ export default function MenuShowcase() {
           "radial-gradient(ellipse 55% 50% at 50% 52%, rgba(196,154,98,0.18), rgba(29,20,15,0) 70%), #1D140F",
       }}
     >
+      {/* Full-screen ambience: a softened version of the dish in view fills
+          the whole screen, so the room takes on its colour and light. Its top
+          and bottom fade into the page, so the section has no hard edges. */}
+      <div className="absolute inset-0" style={{ WebkitMaskImage: EDGE_FADE, maskImage: EDGE_FADE }}>
+        {DISHES.map((d) => (
+          <div
+            key={d.slug}
+            data-dish-ambient
+            className="invisible absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(/images/menu/ambient/${d.slug}.jpg)`,
+              filter: "blur(28px) brightness(0.5) saturate(1.15)",
+            }}
+          />
+        ))}
+      </div>
+      {/* Shade where the dish details sit, so the text stays readable */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-espresso/90 via-espresso/30 via-45% to-transparent md:bg-gradient-to-r md:from-espresso/85 md:via-espresso/25 md:via-40%" />
+
       {DISHES.map((d, i) => (
         <div
           key={d.slug}
           data-dish
-          className="invisible absolute left-1/2 top-[44%] aspect-[2/3] h-[42svh] md:top-1/2 md:h-[70vh] md:max-h-[680px]"
+          className="invisible absolute left-1/2 top-[40%] aspect-[2/3] h-[64svh] md:left-[55%] md:top-1/2 md:h-[100svh]"
         >
-          {/* Soft shadow on the table under the card */}
-          <div
-            data-dish-shadow
-            className="absolute -bottom-10 left-1/2 h-10 w-[90%] -translate-x-1/2 rounded-[50%] bg-black/60 opacity-0 blur-xl"
-          />
-          {/* Depth shadow, shown only once the dish has landed */}
-          <div data-dish-depth className="absolute inset-0 opacity-0 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.9)]" />
-          <div className="absolute inset-0">
+          {/* The dish itself, its edges feathered away into the ambience */}
+          <div className="absolute inset-0" style={{ WebkitMaskImage: FEATHER, maskImage: FEATHER }}>
             {Array.from({ length: STRIPS }, (_, k) => (
               <div
                 key={k}
                 data-strip
-                className="absolute inset-x-0 bg-walnut"
+                className="absolute inset-x-0"
                 style={{
                   top: `${(k * 100) / STRIPS}%`,
                   height: `${100 / STRIPS}%`,
                   backgroundImage: `url(${src(d)})`,
                   backgroundSize: `100% ${STRIPS * 100}%`,
                   backgroundPosition: `0 ${(k / (STRIPS - 1)) * 100}%`,
+                  // Soft top and bottom edges, so the layers blend as they settle.
+                  WebkitMaskImage: SLICE_FADE,
+                  maskImage: SLICE_FADE,
                 }}
               />
             ))}
-            <Image
+            {/* Same file as the slices (one download), so it is already there
+                the moment the last slice lands. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               data-dish-base
               src={src(d)}
               alt={d.alt}
-              fill
-              sizes="(max-width: 768px) 60vw, 32vw"
-              className="object-cover opacity-0"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover opacity-0"
             />
           </div>
           {particles[i].map((p, k) => (
